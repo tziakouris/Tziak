@@ -26,6 +26,7 @@ class CrashHandler private constructor(
         try {
             val crashLog = buildCrashLog(throwable)
             Timber.e(throwable, "App crashed")
+            FileLogTree.flush()
             
             // Launch crash activity
             val intent = Intent(applicationContext, CrashActivity::class.java).apply {
@@ -50,7 +51,7 @@ class CrashHandler private constructor(
         }.toString()
 
         return buildString {
-            appendLine("Metrolist Crash Report")
+            appendLine("Tziak Crash Report")
             appendLine("=".repeat(50))
             appendLine()
             appendLine("Manufacturer: ${Build.MANUFACTURER}")

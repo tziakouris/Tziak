@@ -491,7 +491,7 @@ class MainActivity : FragmentActivity() {
         downloadUtil: DownloadUtil,
         syncUtils: SyncUtils,
     ) {
-        val checkForUpdates by rememberPreference(CheckForUpdatesKey, defaultValue = true)
+        val checkForUpdates by rememberPreference(CheckForUpdatesKey, defaultValue = false)
         var availableUpdate by remember { mutableStateOf<AvailableUpdate?>(null) }
 
         if (BuildConfig.UPDATER_AVAILABLE) {
@@ -725,13 +725,6 @@ class MainActivity : FragmentActivity() {
 
                 val navController = rememberNavController()
 
-                LaunchedEffect(Unit) {
-                    val lastSeenVersion = dataStore.data.first()[LastSeenVersionKey] ?: ""
-                    val currentVersion = BuildConfig.BASE_VERSION_NAME
-                    if (lastSeenVersion != currentVersion) {
-                        showChangelog.value = true
-                    }
-                }
 
                 val homeViewModel: HomeViewModel = hiltViewModel()
                 val accountImageUrl by homeViewModel.accountImageUrl.collectAsStateWithLifecycle()

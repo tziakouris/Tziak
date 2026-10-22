@@ -16,6 +16,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaConstants
 import androidx.media3.session.MediaConstants.EXTRAS_KEY_IS_EXPLICIT
 import androidx.media3.session.MediaConstants.EXTRAS_VALUE_ATTRIBUTE_PRESENT
 import androidx.media3.session.MediaLibraryService
@@ -53,6 +54,7 @@ import com.metrolist.music.utils.joinToArtistString
 import com.metrolist.music.utils.reportException
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import timber.log.Timber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -69,6 +71,8 @@ import com.metrolist.music.constants.AutoRadioQueueKey
 import com.metrolist.music.playback.queues.ListQueue
 import com.metrolist.music.playback.queues.YouTubeQueue
 import com.metrolist.music.ui.screens.settings.AndroidAutoSection
+import com.metrolist.music.ui.utils.resize
+import com.metrolist.music.ui.screens.settings.defaultAndroidAutoSections
 import com.metrolist.music.ui.screens.settings.deserializeSections
 import com.metrolist.music.ui.screens.settings.serializeSections
 import kotlinx.coroutines.withContext
@@ -156,7 +160,21 @@ constructor(
                             .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
                             .build(),
                     ).build(),
-                params,
+                MediaLibraryService.LibraryParams
+                    .Builder()
+                    .setExtras(
+                        Bundle().apply {
+                            putBoolean("android.media.browse.CONTENT_STYLE_SUPPORTED", true)
+                            putInt(
+                                MediaConstants.EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
+                                MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM,
+                            )
+                            putInt(
+                                MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
+                                MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM,
+                            )
+                        },
+                    ).build(),
             ),
         )
 
@@ -183,8 +201,11 @@ constructor(
         params: MediaLibraryService.LibraryParams?,
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
         scope.future(Dispatchers.IO) {
+            val startedAt = System.currentTimeMillis()
+            Timber.tag("AndroidAuto").d("onGetChildren parent=%s page=%d size=%d from=%s", parentId, page, pageSize, browser.packageName)
             try {
                 loadLocalChildren(parentId, page, pageSize)?.let { children ->
+                    logChildren(parentId, children, startedAt)
                     return@future LibraryResult.ofItemList(children, params)
                 }
 
@@ -192,7 +213,7 @@ constructor(
                     MusicService.ROOT -> {
                         val sectionsRaw = context.dataStore.get(
                             AndroidAutoSectionsOrderKey,
-                            serializeSections(AndroidAutoSection.values().map { it to true })
+                            serializeSections(defaultAndroidAutoSections())
                         )
                         val sections = deserializeSections(sectionsRaw)
                         val showYoutubePlaylists = context.dataStore.get(AndroidAutoYouTubePlaylistsKey, false)
@@ -238,7 +259,7 @@ constructor(
                                     )
                                 }
                             }
-                        if (showYoutubePlaylists) {
+                        val sectionItems = if (showYoutubePlaylists) {
                             rootItems + browsableMediaItem(
                                 MusicService.YOUTUBE_PLAYLIST,
                                 context.getString(R.string.mixes),
@@ -249,6 +270,7 @@ constructor(
                         } else {
                             rootItems
                         }
+                        listOfNotNull(continueListeningItem()) + sectionItems
                     }
                     MusicService.YOUTUBE_PLAYLIST -> {
                         if (!context.dataStore.get(AndroidAutoYouTubePlaylistsKey, false)) {
@@ -333,7 +355,7 @@ constructor(
                                                     .setArtist(songItem.artists.joinToArtistString(getArtistSeparator(context)) {
                                                         ArtistNameAliases.resolve(it.id, it.name)
                                                     })
-                                                    .setArtworkUri(songItem.thumbnail.toUri())
+                                                    .setArtworkUri(songItem.thumbnail.toUri().toCarArtworkUri())
                                                     .setIsPlayable(true)
                                                     .setIsBrowsable(false)
                                                     .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
@@ -350,7 +372,9 @@ constructor(
                             else -> emptyList()
                         }
                 }
-                LibraryResult.ofItemList(children.paginate(page, pageSize), params)
+                val pageItems = children.paginate(page, pageSize)
+                logChildren(parentId, pageItems, startedAt)
+                LibraryResult.ofItemList(pageItems, params)
             } catch (e: Exception) {
                 reportException(e)
                 LibraryResult.ofItemList(emptyList(), params)
@@ -539,6 +563,39 @@ constructor(
             }
         }
 
+    /** Root entry that resumes the queue the player currently holds (restored from disk after a restart). */
+    private suspend fun continueListeningItem(): MediaItem? =
+        withContext(Dispatchers.Main) {
+            if (!::service.isInitialized || !service.isPlayerReady.value) return@withContext null
+            val current = service.player.currentMediaItem ?: return@withContext null
+            MediaItem.Builder()
+                .setMediaId(CONTINUE_LISTENING_ID)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(context.getString(R.string.continue_listening))
+                        .setSubtitle(current.mediaMetadata.title)
+                        .setArtworkUri(current.mediaMetadata.artworkUri)
+                        .setIsPlayable(true)
+                        .setIsBrowsable(false)
+                        .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+                        .build(),
+                ).build()
+        }
+
+    private fun logChildren(
+        parentId: String,
+        items: List<MediaItem>,
+        startedAt: Long,
+    ) {
+        Timber.tag("AndroidAuto").d(
+            "onGetChildren result parent=%s count=%d in %dms first=%s",
+            parentId,
+            items.size,
+            System.currentTimeMillis() - startedAt,
+            items.take(6).joinToString(" | ") { it.mediaMetadata.title ?: it.mediaId },
+        )
+    }
+
     override fun onSearch(
         session: MediaLibrarySession,
         browser: MediaSession.ControllerInfo,
@@ -615,7 +672,7 @@ constructor(
                                         .setArtist(songItem.artists.joinToArtistString(getArtistSeparator(context)) {
                                             ArtistNameAliases.resolve(it.id, it.name)
                                         })
-                                        .setArtworkUri(songItem.thumbnail.toUri())
+                                        .setArtworkUri(songItem.thumbnail.toUri().toCarArtworkUri())
                                         .setIsPlayable(true)
                                         .setIsBrowsable(false)
                                         .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
@@ -645,7 +702,23 @@ constructor(
         startPositionMs: Long,
     ): ListenableFuture<MediaItemsWithStartPosition> =
         scope.future(Dispatchers.IO) {
+            Timber.tag("AndroidAuto").d("onSetMediaItems from %s: %s", controller.packageName, mediaItems.firstOrNull()?.mediaId)
+            withContext(Dispatchers.Main) { service.resetPlaybackErrorState() }
             val defaultResult = MediaItemsWithStartPosition(emptyList(), startIndex, startPositionMs)
+            if (mediaItems.firstOrNull()?.mediaId == CONTINUE_LISTENING_ID) {
+                return@future withContext(Dispatchers.Main) {
+                    val player = service.player
+                    if (player.mediaItemCount == 0) {
+                        defaultResult
+                    } else {
+                        MediaItemsWithStartPosition(
+                            List(player.mediaItemCount) { player.getMediaItemAt(it) },
+                            player.currentMediaItemIndex,
+                            player.currentPosition,
+                        )
+                    }
+                }
+            }
             val voiceQuery = mediaItems.firstOrNull()?.requestMetadata?.searchQuery
 
             val path = if (!voiceQuery.isNullOrBlank()) {
@@ -890,6 +963,10 @@ constructor(
         .appendPath(context.resources.getResourceEntryName(id))
         .build()
 
+    // Remote thumbnails are often tiny (w60-h60); Android Auto scales them up and they look blurry.
+    private fun Uri.toCarArtworkUri(): Uri =
+        if (scheme == "https" || scheme == "http") toString().resize(CAR_ARTWORK_SIZE, CAR_ARTWORK_SIZE).toUri() else this
+
     private fun browsableMediaItem(
         id: String,
         title: String,
@@ -905,7 +982,7 @@ constructor(
                 .setTitle(title)
                 .setSubtitle(subtitle)
                 .setArtist(subtitle)
-                .setArtworkUri(iconUri)
+                .setArtworkUri(iconUri?.toCarArtworkUri())
                 .setIsPlayable(false)
                 .setIsBrowsable(true)
                 .setMediaType(mediaType)
@@ -929,7 +1006,7 @@ constructor(
                      .setArtist(artists.joinToArtistString(getArtistSeparator(context)) {
                          ArtistNameAliases.resolve(it.id, it.name)
                      })
-                     .setArtworkUri(song.thumbnailUrl?.toUri())
+                     .setArtworkUri(song.thumbnailUrl?.toUri()?.toCarArtworkUri())
                     .setIsPlayable(isPlayable)
                     .setIsBrowsable(isBrowsable)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
@@ -960,6 +1037,8 @@ internal fun <T> List<T>.paginate(
 }
 
 internal const val MAX_ANDROID_AUTO_PAGE_SIZE = 500
+private const val CAR_ARTWORK_SIZE = 544
+private const val CONTINUE_LISTENING_ID = "continue_listening"
 
 internal data class AndroidAutoPageRequest(
     val offset: Int,

@@ -74,7 +74,7 @@ constructor(
 ) {
     private val TAG = "DownloadUtil"
     private val connectivityManager = context.getSystemService<ConnectivityManager>()!!
-    private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.AUTO)
+    private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.HIGH)
     private val songUrlCache = StreamUrlCache()
     private val streamHttpClient =
         OkHttpClient.Builder()

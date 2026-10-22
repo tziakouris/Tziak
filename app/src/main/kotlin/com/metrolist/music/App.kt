@@ -34,6 +34,7 @@ import com.metrolist.music.extensions.toEnum
 import com.metrolist.music.extensions.toInetSocketAddress
 import com.metrolist.music.utils.CrashHandler
 import com.metrolist.music.utils.ArtistNameAliases
+import com.metrolist.music.utils.FileLogTree
 import com.metrolist.music.utils.InnerTubeXPlayer
 import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.safeDataStoreEdit
@@ -89,6 +90,8 @@ class App :
 
         // Plant logging before extraction services initialize.
         Timber.plant(Timber.DebugTree())
+        FileLogTree.install(this)
+        publishLauncherShortcuts()
         InnerTubeXPlayer.initialize(this)
 
         // Pre-read Coil cache size on background to avoid runBlocking in newImageLoader
@@ -114,6 +117,26 @@ class App :
 
             observeSettingsChanges()
         }
+    }
+
+    // Built at runtime so the target package always matches the installed applicationId (debug builds add a suffix).
+    private fun publishLauncherShortcuts() {
+        runCatching {
+            fun shortcut(id: String, label: Int, icon: Int, action: String) =
+                androidx.core.content.pm.ShortcutInfoCompat.Builder(this, id)
+                    .setShortLabel(getString(label))
+                    .setIcon(androidx.core.graphics.drawable.IconCompat.createWithResource(this, icon))
+                    .setIntent(
+                        android.content.Intent(this, MainActivity::class.java).setAction(action),
+                    ).build()
+            androidx.core.content.pm.ShortcutManagerCompat.addDynamicShortcuts(
+                this,
+                listOf(
+                    shortcut("search", R.string.search, R.drawable.shortcut_search, "com.metrolist.music.action.SEARCH"),
+                    shortcut("library", R.string.filter_library, R.drawable.shortcut_library, "com.metrolist.music.action.LIBRARY"),
+                ),
+            )
+        }.onFailure { Timber.w(it, "Could not publish launcher shortcuts") }
     }
 
     private suspend fun initializeSettings() {

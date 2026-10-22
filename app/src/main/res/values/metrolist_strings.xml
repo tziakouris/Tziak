@@ -994,4 +994,10 @@
     <string name="stream_source_web_creator_desc">Creator web client.</string>
     <string name="top_result">Top result</string>
     <string name="other">Other</string>
+    <string name="share_debug_log">Share debug log</string>
+    <string name="share_debug_log_desc">Send the recent app log to help diagnose problems</string>
+    <string name="no_debug_log">No log available yet</string>
+    <string name="android_auto_force_stop">Stop Android Auto</string>
+    <string name="continue_listening">Continue listening</string>
+    <string name="playback_failed_skipping">Couldn\'t play this song</string>
 </resources>

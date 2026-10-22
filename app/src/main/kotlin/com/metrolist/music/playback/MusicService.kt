@@ -212,6 +212,7 @@ import com.metrolist.music.utils.ScrobbleManager
 import com.metrolist.music.utils.SyncUtils
 import com.metrolist.music.utils.getArtistSeparator
 import com.metrolist.music.utils.joinToArtistString
+import com.metrolist.music.utils.FileLogTree
 import com.metrolist.music.utils.InnerTubeXPlayer
 import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.get
@@ -751,7 +752,7 @@ class MusicService :
         audioQuality = startupPrefs!![AudioQualityKey]?.let { value ->
             if (value == "VERY_HIGH") com.metrolist.music.constants.AudioQuality.HIGH
             else com.metrolist.music.constants.AudioQuality.entries.find { it.name == value }
-        } ?: com.metrolist.music.constants.AudioQuality.AUTO
+        } ?: com.metrolist.music.constants.AudioQuality.HIGH
         playerVolume = MutableStateFlow((startupPrefs!![PlayerVolumeKey] ?: 1f).coerceIn(0f, 1f))
 
         initializeCast()
@@ -798,7 +799,7 @@ class MusicService :
                     it[AudioQualityKey]?.let { value ->
                         if (value == "VERY_HIGH") com.metrolist.music.constants.AudioQuality.HIGH
                         else com.metrolist.music.constants.AudioQuality.entries.find { it.name == value }
-                    } ?: com.metrolist.music.constants.AudioQuality.AUTO
+                    } ?: com.metrolist.music.constants.AudioQuality.HIGH
                 }.distinctUntilChanged()
                 .collect { newQuality ->
                     val oldQuality = audioQuality
@@ -1567,6 +1568,21 @@ class MusicService :
 
         player.pause()
         consecutivePlaybackErr = 0
+    }
+
+    /**
+     * A controller (e.g. Android Auto) picked a new queue. Drop retry/backoff state left over from an
+     * earlier failure so a stuck resolver or exhausted retry counters cannot make every later pick fail.
+     */
+    fun resetPlaybackErrorState() {
+        retryJob?.cancel()
+        retryCount = 0
+        consecutivePlaybackErr = 0
+        currentMediaIdRetryCount.clear()
+        recentlyFailedSongs.clear()
+        waitingForNetworkConnection.value = false
+        pausedDueToNetworkError = false
+        scope.launch { InnerTubeXPlayer.resetExtraction() }
     }
 
     private fun stopOnError() {
@@ -3436,6 +3452,9 @@ class MusicService :
      * Handles final failure when all recovery attempts have been exhausted.
      */
     private fun handleFinalFailure() {
+        // Drop the cached resolver so the next attempt starts clean instead of staying wedged until a restart.
+        scope.launch { InnerTubeXPlayer.resetExtraction() }
+        android.widget.Toast.makeText(this, R.string.playback_failed_skipping, android.widget.Toast.LENGTH_SHORT).show()
         val autoSkipOnError = dataStore.get(AutoSkipNextOnErrorKey, false)
         val autoplay = dataStore.get(AutoplayKey, true)
         val canAdvance = player.hasNextMediaItem()

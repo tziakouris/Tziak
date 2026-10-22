@@ -105,7 +105,7 @@ class WrappedAudioService(
         return try {
             val audioQuality = context.dataStore.get(com.metrolist.music.constants.AudioQualityKey).let { value ->
                 if (value == "VERY_HIGH") AudioQuality.HIGH
-                else AudioQuality.entries.find { it.name == value } ?: AudioQuality.AUTO
+                else AudioQuality.entries.find { it.name == value } ?: AudioQuality.HIGH
             }
             val playbackData = withContext(Dispatchers.IO) {
                 InnerTubeXPlayer.playerResponseForPlayback(

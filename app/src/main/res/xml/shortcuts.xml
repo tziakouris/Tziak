@@ -2,22 +2,11 @@
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
         android:enabled="true"
-        android:icon="@drawable/shortcut_search"
-        android:shortcutId="search"
-        android:shortcutShortLabel="@string/search">
+        android:icon="@drawable/ic_android_auto"
+        android:shortcutId="android_auto_app_info"
+        android:shortcutShortLabel="@string/android_auto_force_stop">
         <intent
-            android:action="com.metrolist.music.action.SEARCH"
-            android:targetClass="com.metrolist.music.MainActivity"
-            android:targetPackage="com.metrolist.music" />
-    </shortcut>
-    <shortcut
-        android:enabled="true"
-        android:icon="@drawable/shortcut_library"
-        android:shortcutId="library"
-        android:shortcutShortLabel="@string/filter_library">
-        <intent
-            android:action="com.metrolist.music.action.LIBRARY"
-            android:targetClass="com.metrolist.music.MainActivity"
-            android:targetPackage="com.metrolist.music" />
+            android:action="android.settings.APPLICATION_DETAILS_SETTINGS"
+            android:data="package:com.google.android.projection.gearhead" />
     </shortcut>
 </shortcuts>

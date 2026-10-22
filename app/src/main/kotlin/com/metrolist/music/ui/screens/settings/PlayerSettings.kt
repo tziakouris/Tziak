@@ -97,7 +97,7 @@ fun PlayerSettings(
 ) {
     val (audioQuality, onAudioQualityChange) = rememberEnumPreference(
         AudioQualityKey,
-        defaultValue = AudioQuality.AUTO
+        defaultValue = AudioQuality.HIGH
     )
     val (crossfadeEnabled, onCrossfadeEnabledChange) = rememberPreference(
         CrossfadeEnabledKey,

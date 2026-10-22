@@ -6,6 +6,7 @@
 package com.metrolist.music.ui.screens.settings
 
 import androidx.compose.foundation.layout.Column
+import android.widget.Toast
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.height
@@ -42,6 +43,7 @@ import com.metrolist.music.ui.component.DefaultDialog
 import com.metrolist.music.ui.component.IconButton
 import com.metrolist.music.ui.component.Material3SettingsGroup
 import com.metrolist.music.ui.component.Material3SettingsItem
+import com.metrolist.music.utils.FileLogTree
 import com.metrolist.music.ui.utils.backToMain
 import com.metrolist.music.utils.rememberPreference
 
@@ -51,6 +53,7 @@ fun PrivacySettings(
     navController: NavController
 ) {
     val database = LocalDatabase.current
+    val context = androidx.compose.ui.platform.LocalContext.current
     val (pauseListenHistory, onPauseListenHistoryChange) = rememberPreference(
         key = PauseListenHistoryKey,
         defaultValue = false
@@ -241,6 +244,19 @@ fun PrivacySettings(
                         )
                     },
                     onClick = { onDisableScreenshotChange(!disableScreenshot) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.error),
+                    title = { Text(stringResource(R.string.share_debug_log)) },
+                    description = { Text(stringResource(R.string.share_debug_log_desc)) },
+                    onClick = {
+                        val intent = FileLogTree.createShareIntent(context)
+                        if (intent != null) {
+                            context.startActivity(intent)
+                        } else {
+                            Toast.makeText(context, R.string.no_debug_log, Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 )
             )
         )

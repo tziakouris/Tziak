@@ -77,11 +77,15 @@ fun AndroidAutoSection.label(): String = when (this) {
     AndroidAutoSection.PLAYLISTS -> stringResource(R.string.playlists)
 }
 
+/** Tziak default: only Playlists is visible. */
+fun defaultAndroidAutoSections(): List<Pair<AndroidAutoSection, Boolean>> =
+    AndroidAutoSection.values().map { it to (it == AndroidAutoSection.PLAYLISTS) }
+
 fun serializeSections(sections: List<Pair<AndroidAutoSection, Boolean>>): String =
     sections.joinToString(",") { (section, enabled) -> "${section.id}:$enabled" }
 
 fun deserializeSections(raw: String): List<Pair<AndroidAutoSection, Boolean>> {
-    if (raw.isBlank()) return AndroidAutoSection.values().map { it to true }
+    if (raw.isBlank()) return defaultAndroidAutoSections()
     return raw.split(",").mapNotNull { token ->
         val parts = token.split(":")
         if (parts.size != 2) return@mapNotNull null
@@ -110,7 +114,7 @@ fun AndroidAutoSettings(
 
     val (sectionsRaw, onSectionsChange) = rememberPreference(
         key = AndroidAutoSectionsOrderKey,
-        defaultValue = serializeSections(AndroidAutoSection.values().map { it to true })
+        defaultValue = serializeSections(defaultAndroidAutoSections())
     )
 
     val (targetPlaylist, onTargetPlaylistChange) = rememberPreference(

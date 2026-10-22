@@ -56,7 +56,7 @@ import kotlinx.coroutines.withContext
 fun UpdaterScreen(
     navController: NavController
 ) {
-    val (checkForUpdates, onCheckForUpdatesChange) = rememberPreference(CheckForUpdatesKey, true)
+    val (checkForUpdates, onCheckForUpdatesChange) = rememberPreference(CheckForUpdatesKey, false)
     val (updateNotifications, onUpdateNotificationsChange) = rememberPreference(UpdateNotificationsEnabledKey, true)
 
     val context = LocalContext.current

@@ -111,6 +111,13 @@ object InnerTubeXPlayer {
         }
     }
 
+    // Forces the next extraction to rebuild its cipher/extractor bundle, which otherwise only
+    // happens on app restart if it ended up in a bad state (e.g. after losing connectivity).
+    suspend fun resetExtraction() {
+        streamClientFailures.clear()
+        bundleMutex.withLock { currentBundle = null }
+    }
+
     fun clearStreamClientFailures() {
         streamClientFailures.clear()
     }
