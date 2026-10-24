@@ -1103,6 +1103,13 @@ interface DatabaseDao {
     )
     suspend fun playlistsByCreateDateAsc(limit: Int, offset: Int): List<Playlist>
 
+    @Transaction
+    @Query(
+        "SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount " +
+            "FROM playlist WHERE bookmarkedAt IS NOT NULL ORDER BY name COLLATE NOCASE, rowId LIMIT :limit OFFSET :offset",
+    )
+    suspend fun playlistsByNameAsc(limit: Int, offset: Int): List<Playlist>
+
     @Query("SELECT browseId FROM playlist WHERE bookmarkedAt IS NOT NULL AND browseId IS NOT NULL")
     suspend fun bookmarkedPlaylistBrowseIds(): List<String>
 

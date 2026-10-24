@@ -444,42 +444,10 @@ constructor(
         }
     }
 
+    // Liked/Downloaded entries were dropped on purpose; playlists are listed A-Z.
     private suspend fun loadPlaylistContainers(request: AndroidAutoPageRequest): List<MediaItem> {
-        val builtInItems =
-            if (request.offset < 2 && request.limit > 0) {
-                val likedSongCount = database.likedSongsCount().first()
-                val downloadedSongCount = downloadUtil.downloads.value.size
-                listOf(
-                    browsableMediaItem(
-                        "${MusicService.PLAYLIST}/${PlaylistEntity.LIKED_PLAYLIST_ID}",
-                        context.getString(R.string.liked_songs),
-                        context.resources.getQuantityString(R.plurals.n_song, likedSongCount, likedSongCount),
-                        drawableUri(R.drawable.favorite),
-                        MediaMetadata.MEDIA_TYPE_PLAYLIST,
-                    ),
-                    browsableMediaItem(
-                        "${MusicService.PLAYLIST}/${PlaylistEntity.DOWNLOADED_PLAYLIST_ID}",
-                        context.getString(R.string.downloaded_songs),
-                        context.resources.getQuantityString(
-                            R.plurals.n_song,
-                            downloadedSongCount,
-                            downloadedSongCount,
-                        ),
-                        drawableUri(R.drawable.download),
-                        MediaMetadata.MEDIA_TYPE_PLAYLIST,
-                    ),
-                ).drop(request.offset).take(request.limit)
-            } else {
-                emptyList()
-            }
-        val playlistRequest = request.afterLeadingItems(2)
-        val playlists =
-            if (playlistRequest.limit == 0) {
-                emptyList()
-            } else {
-                database.playlistsByCreateDateAsc(playlistRequest.limit, playlistRequest.offset)
-            }
-        return builtInItems + playlists.map { playlist ->
+        if (request.limit == 0) return emptyList()
+        return database.playlistsByNameAsc(request.limit, request.offset).map { playlist ->
             browsableMediaItem(
                 "${MusicService.PLAYLIST}/${playlist.id}",
                 playlist.playlist.name,

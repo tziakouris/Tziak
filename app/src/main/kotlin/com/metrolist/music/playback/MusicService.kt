@@ -617,9 +617,15 @@ class MusicService :
         // On some OEMs (e.g. MIUI), even a DataStore read can be slow
         // enough to miss the window, so we promote before any I/O.
         ensureForegroundChannelExists()
-        if (!ensureStartedAsForegroundOrStop()) {
-            return
-        }
+        // When Android Auto binds us from the background, Android 17 refuses the foreground promotion.
+        // Stopping here left a bound service with no player (browse tree and playback dead until the
+        // app was force-closed), so keep initialising; media3 promotes to foreground once playback starts.
+        startForegroundSafely(
+            notification = createFallbackForegroundNotification(),
+            deniedMessage = "Foreground promotion denied at startup; continuing without foreground",
+            failureMessage = "Failed to enter foreground at startup; continuing",
+            stopOnFailure = false,
+        )
 
         // Read ALL startup preferences in one shot so that subsequent code
         // never calls dataStore.get() (which does runBlocking internally).
@@ -4191,17 +4197,6 @@ class MusicService :
         }
     }
 
-    /**
-     * [Context.startForegroundService] requires [startForeground] to succeed quickly. If we cannot
-     * enter the foreground state, stop immediately so the system does not ANR the app process.
-     */
-    private fun ensureStartedAsForegroundOrStop(): Boolean =
-        startForegroundSafely(
-            notification = createFallbackForegroundNotification(),
-            deniedMessage = "Foreground service start not allowed; stopping service to avoid ANR",
-            failureMessage = "Failed to enter foreground; stopping service to avoid ANR",
-        )
-
     private fun ensureForegroundWithLatestNotificationOrStop(): Boolean =
         startForegroundSafely(
             notification = latestMediaNotification ?: createFallbackForegroundNotification(),
@@ -4692,7 +4687,7 @@ class MusicService :
         }
 
         if (!::player.isInitialized) {
-            stopSelf()
+            Timber.tag(TAG).w("Foreground start denied before the player existed; keeping service for browsing")
             return
         }
 
