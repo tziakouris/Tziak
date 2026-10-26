@@ -208,7 +208,7 @@ fun PlayerSettings(
     )
     val (pauseOnMute, onPauseOnMuteChange) = rememberPreference(
         PauseOnMute,
-        defaultValue = false
+        defaultValue = true
     )
     val (resumeOnBluetoothConnect, onResumeOnBluetoothConnectChange) = rememberPreference(
         ResumeOnBluetoothConnectKey,

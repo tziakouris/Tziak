@@ -3506,7 +3506,7 @@ class MusicService :
         muted: Boolean,
     ) {
         super.onDeviceVolumeChanged(volume, muted)
-        val pauseOnMute = dataStore.get(PauseOnMute, false)
+        val pauseOnMute = dataStore.get(PauseOnMute, true)
 
         if ((volume == 0 || muted) && pauseOnMute) {
             if (player.isPlaying) {
