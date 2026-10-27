@@ -45,6 +45,7 @@ import com.metrolist.music.ui.component.IconButton
 import com.metrolist.music.ui.component.Material3SettingsGroup
 import com.metrolist.music.ui.component.Material3SettingsItem
 import com.metrolist.music.ui.utils.backToMain
+import com.metrolist.music.utils.UpdateInstaller
 import com.metrolist.music.utils.Updater
 import com.metrolist.music.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
@@ -56,13 +57,14 @@ import kotlinx.coroutines.withContext
 fun UpdaterScreen(
     navController: NavController
 ) {
-    val (checkForUpdates, onCheckForUpdatesChange) = rememberPreference(CheckForUpdatesKey, false)
+    val (checkForUpdates, onCheckForUpdatesChange) = rememberPreference(CheckForUpdatesKey, true)
     val (updateNotifications, onUpdateNotificationsChange) = rememberPreference(UpdateNotificationsEnabledKey, true)
 
     val context = LocalContext.current
     var isChecking by remember { mutableStateOf(false) }
     var updateAvailable by remember { mutableStateOf(false) }
     var latestVersion by remember { mutableStateOf<String?>(null) }
+    var latestRelease by remember { mutableStateOf<com.metrolist.music.utils.ReleaseInfo?>(null) }
     var showChangelog by remember { mutableStateOf(false) }
     var changelogContent by remember { mutableStateOf<String?>(null) }
     var checkError by remember { mutableStateOf<String?>(null) }
@@ -80,6 +82,7 @@ fun UpdaterScreen(
                     .onSuccess { (releaseInfo, hasUpdate) ->
                         if (releaseInfo != null) {
                             latestVersion = releaseInfo.versionName
+                            latestRelease = releaseInfo
                             updateAvailable = hasUpdate
                             changelogContent = releaseInfo.description
                         }
@@ -216,6 +219,26 @@ fun UpdaterScreen(
 
         if (updateAvailable && latestVersion != null) {
             Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    latestRelease?.let { release ->
+                        val asset = Updater.getDownloadUrlForCurrentVariant(release)?.let { url ->
+                            release.assets.firstOrNull { it.downloadUrl == url }
+                        }
+                        if (asset != null) {
+                            UpdateInstaller.downloadAndInstall(context, coroutineScope, asset.downloadUrl, asset.sha256)
+                        }
+                    }
+                },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+            ) {
+                Text(stringResource(R.string.update_action))
+            }
+
+            Spacer(Modifier.height(8.dp))
             Button(
                 onClick = { showChangelog = !showChangelog },
                 modifier =

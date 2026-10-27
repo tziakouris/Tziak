@@ -212,6 +212,7 @@ import com.metrolist.music.utils.ScrobbleManager
 import com.metrolist.music.utils.SyncUtils
 import com.metrolist.music.utils.getArtistSeparator
 import com.metrolist.music.utils.joinToArtistString
+import com.metrolist.music.utils.DiagnosticsLogger
 import com.metrolist.music.utils.FileLogTree
 import com.metrolist.music.utils.InnerTubeXPlayer
 import com.metrolist.music.utils.dataStore
@@ -695,6 +696,9 @@ class MusicService :
 
         playerInitialized.value = true
         Timber.tag(TAG).d("Player successfully initialized")
+        DiagnosticsLogger.start(this, scope) {
+            "playing=${player.isPlaying} state=${player.playbackState} quality=$audioQuality items=${player.mediaItemCount}"
+        }
 
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         setupAudioFocusRequest()

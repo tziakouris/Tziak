@@ -27,7 +27,8 @@ data class ReleaseAsset(
     val downloadUrl: String,
     val size: Long,
     val architecture: String,
-    val variant: String // "foss" or "gms"
+    val variant: String, // "foss" or "gms"
+    val sha256: String = "",
 )
 
 object Updater {
@@ -39,7 +40,7 @@ object Updater {
     private var cachedAllReleases: List<ReleaseInfo> = emptyList()
     
     private const val CHECK_INTERVAL_MILLIS = 2 * 60 * 60 * 1000L // 2 hours
-    private const val GITHUB_API_BASE = "https://api.github.com/repos/MetrolistGroup/Metrolist"
+    private const val GITHUB_API_BASE = "https://api.github.com/repos/tziakouris/Tziak"
     private const val KMP_LATEST_RELEASE_URL = "https://api.github.com/repos/MetrolistGroup/Metrolist-KMP/releases/latest"
     private const val KMP_APK_NAME = "Metrolist.apk"
 
@@ -48,8 +49,10 @@ object Updater {
      * Returns: 1 if v1 > v2, -1 if v1 < v2, 0 if equal
      */
     fun compareVersions(v1: String, v2: String): Int {
-        val v1Parts = v1.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
-        val v2Parts = v2.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
+        // Tziak versions look like "13.7.0-tziak.2"; compare every number in order.
+        val digits = Regex("\\d+")
+        val v1Parts = digits.findAll(v1).map { it.value.toInt() }.toList()
+        val v2Parts = digits.findAll(v2).map { it.value.toInt() }.toList()
         val maxLength = maxOf(v1Parts.size, v2Parts.size)
         
         for (i in 0 until maxLength) {
@@ -96,24 +99,9 @@ object Updater {
             val downloadUrl = asset.getString("browser_download_url")
             val size = asset.getLong("size")
             
-            // Parse architecture and variant from filename
-            val (arch, variant) = when {
-                name == "Metrolist.apk" -> "universal" to "foss"
-                name == "Metrolist-with-Google-Cast.apk" -> "universal" to "gms"
-                name.startsWith("app-") && name.endsWith("-release.apk") -> {
-                    val arch = name.removePrefix("app-").removeSuffix("-release.apk")
-                    arch to "foss"
-                }
-                name.startsWith("app-") && name.endsWith("-with-Google-Cast.apk") -> {
-                    val arch = name.removePrefix("app-").removeSuffix("-with-Google-Cast.apk")
-                    arch to "gms"
-                }
-                else -> null to null
-            }
-            
-            if (arch != null && variant != null) {
-                assets.add(ReleaseAsset(name, downloadUrl, size, arch, variant))
-            }
+            // Tziak publishes a single universal APK per release.
+            val sha256 = asset.optString("digest").removePrefix("sha256:").takeIf { it.length == 64 }.orEmpty()
+            assets.add(ReleaseAsset(name, downloadUrl, size, "universal", "foss", sha256))
         }
         
         return assets
@@ -137,7 +125,7 @@ object Updater {
                 val releaseInfo = ReleaseInfo(
                     tagName = json.getString("tag_name"),
                     versionName = json.getString("name"),
-                    description = json.getString("body"),
+                    description = json.optString("body"),
                     releaseDate = json.getString("published_at"),
                     assets = parseAssets(json.getJSONArray("assets"))
                 )
@@ -208,12 +196,7 @@ object Updater {
     /**
      * Returns the latest stable KMP release when it includes an Android APK.
      */
-    suspend fun getLatestKmpRelease(): Result<ReleaseInfo?> =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                parseKmpRelease(client.get(KMP_LATEST_RELEASE_URL).bodyAsText())
-            }
-        }
+    suspend fun getLatestKmpRelease(): Result<ReleaseInfo?> = Result.success(null) // Tziak has no KMP successor
 
     /**
      * Get the download URL for the correct app variant
@@ -239,7 +222,7 @@ object Updater {
                 if (!shouldFetch && cachedReleaseInfo != null) {
                     val hasUpdate = isUpdateAvailable(
                         BuildConfig.BASE_VERSION_NAME,
-                        cachedReleaseInfo!!.versionName
+                        cachedReleaseInfo!!.tagName
                     )
                     return@runCatching cachedReleaseInfo!! to hasUpdate
                 }
@@ -249,7 +232,7 @@ object Updater {
                     val releaseInfo = result.getOrThrow()
                     val hasUpdate = isUpdateAvailable(
                         BuildConfig.BASE_VERSION_NAME,
-                        releaseInfo.versionName
+                        releaseInfo.tagName
                     )
                     releaseInfo to hasUpdate
                 } else {

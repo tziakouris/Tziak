@@ -205,6 +205,7 @@ import com.metrolist.music.utils.ReleaseInfo
 import com.metrolist.music.utils.SearchRoutes
 import com.metrolist.music.utils.SyncUtils
 import com.metrolist.music.utils.ArtistNameAliases
+import com.metrolist.music.utils.UpdateInstaller
 import com.metrolist.music.utils.Updater
 import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.safeDataStoreEdit
@@ -491,7 +492,7 @@ class MainActivity : FragmentActivity() {
         downloadUtil: DownloadUtil,
         syncUtils: SyncUtils,
     ) {
-        val checkForUpdates by rememberPreference(CheckForUpdatesKey, defaultValue = false)
+        val checkForUpdates by rememberPreference(CheckForUpdatesKey, defaultValue = true)
         var availableUpdate by remember { mutableStateOf<AvailableUpdate?>(null) }
 
         if (BuildConfig.UPDATER_AVAILABLE) {
@@ -1495,7 +1496,12 @@ class MainActivity : FragmentActivity() {
                                     TextButton(
                                         onClick = {
                                             dismissUpdate()
-                                            startActivity(Intent(Intent.ACTION_VIEW, update.downloadUrl.toUri()))
+                                            UpdateInstaller.downloadAndInstall(
+                                                this@MainActivity,
+                                                lifecycleScope,
+                                                update.downloadUrl,
+                                                update.release.assets.firstOrNull { it.downloadUrl == update.downloadUrl }?.sha256.orEmpty(),
+                                            )
                                         },
                                     ) {
                                         Text(
