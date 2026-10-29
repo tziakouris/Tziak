@@ -35,7 +35,7 @@ class FileLogTree private constructor(
         message: String,
         t: Throwable?,
     ) {
-        if (priority < Log.DEBUG) return
+        if (!enabled || priority < Log.DEBUG) return
         val line =
             buildString {
                 append(timeFormat.format(Date()))
@@ -79,14 +79,32 @@ class FileLogTree private constructor(
         @Volatile
         private var instance: FileLogTree? = null
 
+        /** Off by default; follows the "Keep debug log" switch. Nothing is written while false. */
+        @Volatile
+        var enabled = false
+            private set
+
         fun install(context: Context) {
             val tree = FileLogTree(File(File(context.cacheDir, "logs"), LOG_NAME))
             instance = tree
             Timber.plant(tree)
-            Timber.i(
-                "Tziak ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) on ${Build.MANUFACTURER} ${Build.MODEL}, " +
-                    "Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT}); process started",
-            )
+        }
+
+        fun setEnabled(
+            context: Context,
+            value: Boolean,
+        ) {
+            if (value == enabled) return
+            enabled = value
+            if (value) {
+                Timber.i(
+                    "Tziak ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) on ${Build.MANUFACTURER} ${Build.MODEL}, " +
+                        "Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT}); logging on",
+                )
+            } else {
+                flush()
+                runCatching { File(context.cacheDir, "logs").deleteRecursively() }
+            }
         }
 
         /** Blocks briefly until queued lines are on disk; call right before the process is killed. */

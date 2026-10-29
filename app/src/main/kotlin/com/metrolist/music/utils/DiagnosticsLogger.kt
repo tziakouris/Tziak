@@ -53,6 +53,10 @@ object DiagnosticsLogger {
         job =
             scope.launch(Dispatchers.Default) {
                 while (isActive) {
+                    if (!FileLogTree.enabled) {
+                        delay(INTERVAL_MS)
+                        continue
+                    }
                     val playback = withContext(Dispatchers.Main) { runCatching(playbackSummary).getOrDefault("?") }
                     runCatching { snapshot(app, playback) }.onFailure { Timber.tag(TAG).w(it, "snapshot failed") }
                     delay(INTERVAL_MS)

@@ -996,7 +996,9 @@
     <string name="other">Other</string>
     <string name="share_debug_log">Share debug log</string>
     <string name="share_debug_log_desc">Send the recent app log to help diagnose problems</string>
-    <string name="no_debug_log">No log available yet</string>
+    <string name="no_debug_log">No log available. Turn on \"Keep debug log\" and try again later</string>
+    <string name="keep_debug_log">Keep debug log</string>
+    <string name="keep_debug_log_desc">Off by default. Turn on to record a log you can share to diagnose problems; turning it off deletes the log</string>
     <string name="android_auto_force_stop">Stop Android Auto</string>
     <string name="continue_listening">Continue listening</string>
     <string name="playback_failed_skipping">Couldn\'t play this song</string>

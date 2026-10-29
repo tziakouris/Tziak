@@ -91,6 +91,12 @@ class App :
         // Plant logging before extraction services initialize.
         Timber.plant(Timber.DebugTree())
         FileLogTree.install(this)
+        applicationScope.launch(Dispatchers.IO) {
+            dataStore.data
+                .map { it[KeepDebugLogKey] ?: false }
+                .distinctUntilChanged()
+                .collect { FileLogTree.setEnabled(this@App, it) }
+        }
         publishLauncherShortcuts()
         InnerTubeXPlayer.initialize(this)
 

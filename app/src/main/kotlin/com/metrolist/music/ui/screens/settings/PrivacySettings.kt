@@ -37,6 +37,7 @@ import com.metrolist.music.LocalDatabase
 import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.R
 import com.metrolist.music.constants.DisableScreenshotKey
+import com.metrolist.music.constants.KeepDebugLogKey
 import com.metrolist.music.constants.PauseListenHistoryKey
 import com.metrolist.music.constants.PauseSearchHistoryKey
 import com.metrolist.music.ui.component.DefaultDialog
@@ -60,6 +61,10 @@ fun PrivacySettings(
     )
     val (pauseSearchHistory, onPauseSearchHistoryChange) = rememberPreference(
         key = PauseSearchHistoryKey,
+        defaultValue = false
+    )
+    val (keepDebugLog, onKeepDebugLogChange) = rememberPreference(
+        key = KeepDebugLogKey,
         defaultValue = false
     )
     val (disableScreenshot, onDisableScreenshotChange) = rememberPreference(
@@ -244,6 +249,18 @@ fun PrivacySettings(
                         )
                     },
                     onClick = { onDisableScreenshotChange(!disableScreenshot) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.error),
+                    title = { Text(stringResource(R.string.keep_debug_log)) },
+                    description = { Text(stringResource(R.string.keep_debug_log_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = keepDebugLog,
+                            onCheckedChange = onKeepDebugLogChange,
+                        )
+                    },
+                    onClick = { onKeepDebugLogChange(!keepDebugLog) }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.error),
