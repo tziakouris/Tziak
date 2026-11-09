@@ -484,6 +484,7 @@ class MusicService :
     private var consecutivePlaybackErr = 0
     private var retryJob: Job? = null
     private var retryCount = 0
+    private var lastErrorWasNoInternet = false
     private var initialBufferRecoveryJob: Job? = null
     private var initialBufferRecoveryAttemptedMediaId: String? = null
     // True only when stopOnError() paused playback purely because of a network outage
@@ -3080,6 +3081,9 @@ class MusicService :
             .tag(TAG)
             .w(error, "Player error occurred for $mediaId: errorCode=${error.errorCode}, message=${error.message}")
         reportException(error)
+        lastErrorWasNoInternet =
+            generateSequence<Throwable>(error) { it.cause }
+                .any { it is java.net.UnknownHostException || it.message?.contains("No network connection") == true }
 
         if (mediaId != null && hasExceededRetryLimit(mediaId)) {
             Timber.tag(TAG).w("Song $mediaId has exceeded retry limit, skipping")
@@ -3491,7 +3495,8 @@ class MusicService :
     private fun handleFinalFailure() {
         // Drop the cached resolver so the next attempt starts clean instead of staying wedged until a restart.
         scope.launch { InnerTubeXPlayer.resetExtraction() }
-        android.widget.Toast.makeText(this, R.string.playback_failed_skipping, android.widget.Toast.LENGTH_SHORT).show()
+        val failureMessage = if (lastErrorWasNoInternet) R.string.playback_failed_no_internet else R.string.playback_failed_skipping
+        android.widget.Toast.makeText(this, failureMessage, android.widget.Toast.LENGTH_SHORT).show()
         val autoSkipOnError = dataStore.get(AutoSkipNextOnErrorKey, false)
         val autoplay = dataStore.get(AutoplayKey, true)
         val canAdvance = player.hasNextMediaItem()

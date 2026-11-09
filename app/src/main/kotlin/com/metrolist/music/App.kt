@@ -140,6 +140,15 @@ class App :
                 listOf(
                     shortcut("search", R.string.search, R.drawable.shortcut_search, "com.metrolist.music.action.SEARCH"),
                     shortcut("library", R.string.filter_library, R.drawable.shortcut_library, "com.metrolist.music.action.LIBRARY"),
+                    // Opens Android Auto's app-info page so it can be force-stopped. Static shortcuts are
+                    // ignored here because the launcher entry is an activity-alias without shortcut metadata.
+                    androidx.core.content.pm.ShortcutInfoCompat.Builder(this, "android_auto_app_info")
+                        .setShortLabel(getString(R.string.android_auto_force_stop))
+                        .setIcon(androidx.core.graphics.drawable.IconCompat.createWithResource(this, R.drawable.ic_android_auto))
+                        .setIntent(
+                            android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                .setData(android.net.Uri.parse("package:com.google.android.projection.gearhead")),
+                        ).build(),
                 ),
             )
         }.onFailure { Timber.w(it, "Could not publish launcher shortcuts") }

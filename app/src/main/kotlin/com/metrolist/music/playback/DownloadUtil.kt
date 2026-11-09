@@ -284,17 +284,20 @@ constructor(
                         val downloadId = download.request.id
                         songUrlCache.invalidate(downloadId)
 
-                        runCatching {
-                            database.updateDownloadedInfo(downloadId, false, null)
-                        }.onSuccess {
-                            downloads.update { map ->
-                                map.toMutableMap().apply {
-                                    remove(downloadId)
+                        // Room refuses blocking calls on the main thread, where this listener runs.
+                        scope.launch {
+                            runCatching {
+                                database.updateDownloadedInfo(downloadId, false, null)
+                            }.onSuccess {
+                                downloads.update { map ->
+                                    map.toMutableMap().apply {
+                                        remove(downloadId)
+                                    }
                                 }
+                                Timber.tag(TAG).d("Successfully removed download $downloadId from in-memory map")
+                            }.onFailure { error ->
+                                Timber.tag(TAG).e(error, "Failed to update database for removed download $downloadId, keeping in-memory entry")
                             }
-                            Timber.tag(TAG).d("Successfully removed download $downloadId from in-memory map")
-                        }.onFailure { error ->
-                            Timber.tag(TAG).e(error, "Failed to update database for removed download $downloadId, keeping in-memory entry")
                         }
                     }
                 }

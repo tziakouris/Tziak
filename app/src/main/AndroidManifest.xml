@@ -153,10 +153,6 @@
 
                 <data android:mimeType="text/plain" />
             </intent-filter>
-
-            <meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- Legacy launcher alias kept for upgrade compatibility.
