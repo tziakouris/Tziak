@@ -91,7 +91,7 @@ interface PlaylistDao {
 
     @Transaction
     @Query(
-        "SELECT *, $PLAYLIST_SONG_COUNT AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL ORDER BY name",
+        "SELECT *, $PLAYLIST_SONG_COUNT AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL ORDER BY name COLLATE NOCASE, rowId",
     )
     fun playlistsByNameAsc(): Flow<List<Playlist>>
 

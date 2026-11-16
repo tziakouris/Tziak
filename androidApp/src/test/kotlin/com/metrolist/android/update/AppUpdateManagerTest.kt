@@ -28,6 +28,16 @@ class AppUpdateManagerTest {
     }
 
     @Test
+    fun onlyReleasesWithAnInstallableApkAreOffered() {
+        val noApk = tziakRelease("v14.0.0-tziak.3", "notes.txt")
+        val installable = tziakRelease("v14.0.0-tziak.2", "Tziak-14.0.0-tziak.2.apk")
+        val current = tziakRelease("v14.0.0-tziak.1", "Tziak-14.0.0-tziak.1.apk")
+        assertEquals(installable, AppUpdateManager.newestInstallableUpdate(listOf(noApk, installable, current), "14.0.0-tziak.1"))
+        assertNull(AppUpdateManager.newestInstallableUpdate(listOf(noApk, current), "14.0.0-tziak.1"))
+        assertNull(AppUpdateManager.newestInstallableUpdate(listOf(installable), "14.0.0-tziak.2"))
+    }
+
+    @Test
     fun tziakVersionsCompareNumerically() {
         assertTrue(AppUpdateManager.compareVersions("14.0.0-tziak.2", "14.0.0-tziak.1") > 0)
         assertTrue(AppUpdateManager.compareVersions("14.0.0-tziak.10", "14.0.0-tziak.9") > 0)

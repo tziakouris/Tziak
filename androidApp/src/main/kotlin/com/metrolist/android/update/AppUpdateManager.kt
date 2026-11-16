@@ -209,7 +209,7 @@ object AppUpdateManager {
                     if (!crashRecovery) Settings.shared.cachedUpdateReleasesJson = json.encodeToString(publicReleases)
                     val now = System.currentTimeMillis()
                     if (!crashRecovery) Settings.shared.lastUpdateCheckTimestamp = now
-                    val update = publicReleases.firstOrNull { compareVersions(it.version, currentVersion) > 0 }
+                    val update = newestInstallableUpdate(publicReleases, currentVersion)
                     if (!crashRecovery) Settings.shared.cachedAvailableUpdateJson = update?.let { json.encodeToString(it) }.orEmpty()
                     mutableState.value = if (update == null) AppUpdateState.UpToDate(now) else AppUpdateState.Available(update)
                     if (update != null && notify && !crashRecovery) notifyAvailable(context, update)
@@ -502,6 +502,12 @@ object AppUpdateManager {
     }
 
     private fun sha256(value: ByteArray): String = MessageDigest.getInstance("SHA-256").digest(value).joinToString("") { "%02x".format(it) }
+
+    /** The newest release (list is newest first) that is newer than [currentVersion] and has an APK Tziak can install. */
+    internal fun newestInstallableUpdate(
+        releases: List<GitHubRelease>,
+        currentVersion: String,
+    ): GitHubRelease? = releases.firstOrNull { it.apk != null && compareVersions(it.version, currentVersion) > 0 }
 
     internal fun isTrustedDownloadUrl(url: String): Boolean = url.startsWith(TRUSTED_DOWNLOAD_PREFIX)
 

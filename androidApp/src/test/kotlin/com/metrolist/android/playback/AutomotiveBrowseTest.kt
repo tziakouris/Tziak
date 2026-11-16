@@ -160,6 +160,21 @@ class AutomotiveBrowseTest {
     private fun library() = AutomotiveMediaLibrary(context, database, repository, rootPlaylistsOnly = false)
 
     @Test
+    fun playlistsAreListedAToZIgnoringCase() =
+        runBlocking {
+            val dao = database.dao()
+            dao.insert(PlaylistEntity("p-zed", "zed"))
+            dao.insert(PlaylistEntity("p-abc", "abc"))
+            dao.insert(PlaylistEntity("p-bee", "Bee"))
+            val titles =
+                library()
+                    .children(AutomotiveMediaIds.PLAYLISTS, 0, 100)
+                    .map { it.mediaMetadata.title.toString() }
+                    .filter { it in setOf("zed", "abc", "Bee") }
+            assertEquals(listOf("abc", "Bee", "zed"), titles)
+        }
+
+    @Test
     fun rootShowsOnlyThePlaylistsFolder() {
         val library = AutomotiveMediaLibrary(context, database, repository)
         assertEquals(listOf(AutomotiveMediaIds.PLAYLISTS), library.rootChildren(childLimit = Int.MAX_VALUE).map { it.mediaId })
