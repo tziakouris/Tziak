@@ -58,7 +58,7 @@ data class GitHubRelease(
                         BLOCKED_APK_MARKERS.none { marker -> asset.name.contains(marker, ignoreCase = true) }
                 }
             val preferredNames =
-                PREFERRED_APK_NAMES + listOf("metrolist-android-$version.apk", "metrolist-android-$version-universal.apk")
+                PREFERRED_APK_NAMES + listOf("tziak-$version.apk", "tziak-next-$version.apk")
             return preferredNames.firstNotNullOfOrNull { preferred ->
                 candidates.singleOrNull { it.name.equals(preferred, ignoreCase = true) }
             }
@@ -108,7 +108,8 @@ enum class UpdateFailure { CHECK, NO_APK, DOWNLOAD, DIGEST, INSTALL }
 
 object AppUpdateManager {
     const val CHANNEL_ID = "updates"
-    private const val RELEASES_URL = "https://api.github.com/repos/MetrolistGroup/Metrolist/releases?per_page=50"
+    internal const val RELEASES_URL = "https://api.github.com/repos/tziakouris/Tziak/releases?per_page=50"
+    private const val TRUSTED_DOWNLOAD_PREFIX = "https://github.com/tziakouris/Tziak/releases/download/"
     private const val NOTIFICATION_ID = 1400
     private const val MAX_APK_BYTES = 512L * 1024 * 1024
     private const val MIN_FREE_SPACE_BYTES = 16L * 1024 * 1024
@@ -194,7 +195,7 @@ object AppUpdateManager {
                             .url(RELEASES_URL)
                             .header("Accept", "application/vnd.github+json")
                             .header("X-GitHub-Api-Version", "2022-11-28")
-                            .header("User-Agent", "Metrolist/${BuildConfig.VERSION_NAME}")
+                            .header("User-Agent", "Tziak/${BuildConfig.VERSION_NAME}")
                             .build()
                     val publicReleases =
                         client.newCall(request).execute().use { response ->
@@ -239,16 +240,17 @@ object AppUpdateManager {
                 return@withLock
             }
             runCatching {
+                check(isTrustedDownloadUrl(asset.downloadUrl)) { "Update is not hosted in the Tziak repository" }
                 check(asset.size in 1..MAX_APK_BYTES) { "Invalid update size" }
                 val updateDir = File(context.cacheDir, "updates").apply { mkdirs() }
                 updateDir.listFiles()?.forEach(File::delete)
-                val partial = File(updateDir, "Metrolist-${release.version}.apk.part")
-                val output = File(updateDir, "Metrolist-${release.version}.apk")
+                val partial = File(updateDir, "Tziak-${release.version}.apk.part")
+                val output = File(updateDir, "Tziak-${release.version}.apk")
                 val request =
                     Request
                         .Builder()
                         .url(asset.downloadUrl)
-                        .header("User-Agent", "Metrolist/${BuildConfig.VERSION_NAME}")
+                        .header("User-Agent", "Tziak/${BuildConfig.VERSION_NAME}")
                         .build()
                 var downloaded = 0L
                 val call = client.newCall(request).also { activeDownload = it }
@@ -501,6 +503,8 @@ object AppUpdateManager {
 
     private fun sha256(value: ByteArray): String = MessageDigest.getInstance("SHA-256").digest(value).joinToString("") { "%02x".format(it) }
 
+    internal fun isTrustedDownloadUrl(url: String): Boolean = url.startsWith(TRUSTED_DOWNLOAD_PREFIX)
+
     internal fun compareVersions(
         left: String,
         right: String,
@@ -512,12 +516,6 @@ object AppUpdateManager {
 }
 
 private const val CHECK_INTERVAL_MILLIS = 60 * 60 * 1_000L
-private const val CACHE_SOURCE = "github-releases-metrolist-v1"
-private val PREFERRED_APK_NAMES =
-    listOf(
-        "Metrolist.apk",
-        "Metrolist-Android-release.apk",
-        "androidApp-release.apk",
-        "nightly-Metrolist-Android-release.apk",
-    )
+private const val CACHE_SOURCE = "github-releases-tziak-v1"
+private val PREFERRED_APK_NAMES = listOf("Tziak.apk")
 private val BLOCKED_APK_MARKERS = listOf("debug", "unsigned", "unaligned", "test", "benchmark")
