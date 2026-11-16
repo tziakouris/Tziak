@@ -935,7 +935,7 @@ class YouTubeRepository(
                 onPlaylistNotFound(playlistId)
                 throw PlaylistNotFoundException(playlistId)
             }
-            Logger.w(TAG, "Playlist browse failed browseId=$id type=${e::class.simpleName}")
+            Logger.w(TAG, "Playlist browse failed browseId=$id type=${e::class.simpleName}${(e as? InnerTubeHttpException)?.let { " HTTP ${it.status.value}" } ?: ""}")
             val sections =
                 databaseProvider()?.loadOfflinePlaylist(playlistId, offlineSongAvailabilityProvider()?.songIds())
                     ?: throw e
