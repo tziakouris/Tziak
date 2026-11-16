@@ -8,6 +8,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.session.MediaConstants
 import androidx.room3.Room
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import coil3.ImageLoader
@@ -173,6 +174,15 @@ class AutomotiveBrowseTest {
                     .filter { it in setOf("zed", "abc", "Bee") }
             assertEquals(listOf("abc", "Bee", "zed"), titles)
         }
+
+    @Test
+    fun playlistsFolderAsksTheCarForBigGridCovers() {
+        val extras = AutomotiveMediaLibrary(context, database, repository).rootChildren().single().mediaMetadata.extras
+        assertEquals(
+            MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM,
+            extras?.getInt(MediaConstants.EXTRAS_KEY_CONTENT_STYLE_BROWSABLE),
+        )
+    }
 
     @Test
     fun rootShowsOnlyThePlaylistsFolder() {

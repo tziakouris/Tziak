@@ -501,7 +501,13 @@ internal class AutomotiveMediaLibrary(
     private fun allRootChildren(browsableOnly: Boolean): List<MediaItem> {
         if (rootPlaylistsOnly) {
             return listOf(
-                folder(AutomotiveMediaIds.PLAYLISTS, context.getString(R.string.playlists), MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS),
+                folder(
+                    AutomotiveMediaIds.PLAYLISTS,
+                    context.getString(R.string.playlists),
+                    MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS,
+                    // The playlists inside are browsable; ask the car for big cover tiles instead of a list.
+                    childBrowsableStyle = MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM,
+                ),
             )
         }
         val pins = Settings.shared.getAutomotivePinnedPlaylists()
