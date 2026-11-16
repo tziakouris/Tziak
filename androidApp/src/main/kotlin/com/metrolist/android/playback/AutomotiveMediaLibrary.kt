@@ -317,6 +317,8 @@ internal class AutomotiveMediaLibrary(
     private val isNetworkConnected: () -> Boolean = { PlaybackNetworkStateStore.current.connected },
     private val nowMs: () -> Long = System::currentTimeMillis,
     private val refreshLikes: suspend () -> Boolean = { SongLikeState.refreshLikesFromRemote(force = false) },
+    // Tziak: the car's top level is a single Playlists folder. Other folders stay reachable by id for tests and deep links.
+    private val rootPlaylistsOnly: Boolean = true,
 ) {
     private data class RemotePlaylistState(
         val identity: List<String>,
@@ -497,6 +499,11 @@ internal class AutomotiveMediaLibrary(
     }
 
     private fun allRootChildren(browsableOnly: Boolean): List<MediaItem> {
+        if (rootPlaylistsOnly) {
+            return listOf(
+                folder(AutomotiveMediaIds.PLAYLISTS, context.getString(R.string.playlists), MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS),
+            )
+        }
         val pins = Settings.shared.getAutomotivePinnedPlaylists()
         val pinnedItems =
             if (pins.isEmpty()) {

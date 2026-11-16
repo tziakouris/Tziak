@@ -157,7 +157,15 @@ class AutomotiveBrowseTest {
         Settings.replaceSharedForTest(null)
     }
 
-    private fun library() = AutomotiveMediaLibrary(context, database, repository)
+    private fun library() = AutomotiveMediaLibrary(context, database, repository, rootPlaylistsOnly = false)
+
+    @Test
+    fun rootShowsOnlyThePlaylistsFolder() {
+        val library = AutomotiveMediaLibrary(context, database, repository)
+        assertEquals(listOf(AutomotiveMediaIds.PLAYLISTS), library.rootChildren(childLimit = Int.MAX_VALUE).map { it.mediaId })
+        assertEquals(listOf(AutomotiveMediaIds.PLAYLISTS), library.rootChildren().map { it.mediaId })
+        assertEquals(listOf(AutomotiveMediaIds.PLAYLISTS), library.rootChildren(browsableOnly = false).map { it.mediaId })
+    }
 
     @Test
     fun builtinFoldersPublishTheirCollectionArtwork() {
