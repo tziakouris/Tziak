@@ -39,6 +39,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreProvider
 import coil3.imageLoader
+import com.metrolist.android.logging.DebugLog
 import com.metrolist.android.BuildConfig
 import com.metrolist.android.LocalMiniPlayerBottomInset
 import com.metrolist.android.R
@@ -87,9 +88,12 @@ import com.metrolist.shared.generated.resources.app_font_reset_description
 import com.metrolist.shared.generated.resources.app_language_system
 import com.metrolist.shared.generated.resources.calculating
 import com.metrolist.shared.generated.resources.device_language
+import com.metrolist.shared.generated.resources.no_debug_log
 import com.metrolist.shared.generated.resources.search_history_removal_failed
 import com.metrolist.shared.generated.resources.settings_storage_summary
 import com.metrolist.shared.generated.resources.settings_updates_available_description
+import com.metrolist.shared.generated.resources.share_debug_log
+import com.metrolist.shared.generated.resources.share_debug_log_desc
 import com.metrolist.shared.generated.resources.spotify_import_error_sign_in_failed
 import com.metrolist.shared.generated.resources.updates_no_updates
 import com.metrolist.shared.settings.FontOption
@@ -129,6 +133,7 @@ fun SettingsScreen(
     var currentPage by remember { mutableStateOf<SettingsPageId?>(null) }
     val formatFileSize = rememberFileSizeFormatter()
     val context = LocalContext.current
+    val noDebugLogMessage = stringResource(Res.string.no_debug_log)
     val uriHandler = LocalUriHandler.current
     val playerConnection = LocalPlayerConnection.current
     val audioCacheManager: AudioCacheManager = koinInject()
@@ -385,6 +390,22 @@ fun SettingsScreen(
                     },
                     rememberMetroEqProfilePicker = { onPicked -> rememberMetroEqProfilePicker(onPicked) },
                     onClose = onNavigateBack,
+                    privacyDiagnosticActions =
+                        listOf(
+                            SettingsHostAction(
+                                id = "shareDebugLog",
+                                title = stringResource(Res.string.share_debug_log),
+                                description = stringResource(Res.string.share_debug_log_desc),
+                                onClick = {
+                                    val intent = DebugLog.shareIntent(context)
+                                    if (intent != null) {
+                                        context.startActivity(intent)
+                                    } else {
+                                        Toast.makeText(context, noDebugLogMessage, Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                            ),
+                        ),
                     onOpenArtist = onNavigateToArtist,
                     onSpotifySignIn = { showSpotifyLogin = true },
                     bottomContentPadding = miniPlayerInset,
@@ -560,8 +581,11 @@ fun SettingsScreen(
                             SettingsChangeEffect.RESTART,
                             SettingsChangeEffect.PLAYBACK_SPEED,
                             SettingsChangeEffect.PLAYBACK_PITCH,
-                            SettingsChangeEffect.LOGGING,
                             -> {}
+
+                            SettingsChangeEffect.LOGGING -> {
+                                value?.let(DebugLog::setEnabled)
+                            }
                         }
                     },
                 ),

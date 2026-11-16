@@ -58,6 +58,7 @@ import com.metrolist.shared.discord.observeDiscordInitialization
 import com.metrolist.shared.equalizer.EqualizerProfiles
 import com.metrolist.shared.listentogether.network.isAllowedListenTogetherServerUrl
 import com.metrolist.shared.settings.BlockedContent
+import com.metrolist.android.logging.DebugLog
 import com.metrolist.shared.settings.Settings
 import com.metrolist.shared.state.GlobalYouTube
 import com.metrolist.shared.state.SongLikeState
@@ -239,6 +240,7 @@ class App :
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
+        DebugLog.install(this, Settings.shared.keepDebugLog)
 
         val koinStart = SystemClock.elapsedRealtime()
         startKoin {

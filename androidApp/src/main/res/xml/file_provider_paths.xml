@@ -10,6 +10,9 @@
         name="playback_logs"
         path="playback_logs/" />
     <cache-path
+        name="debug_logs"
+        path="debug_logs/" />
+    <cache-path
         name="shared_apks"
         path="shared_apks/" />
 </paths>

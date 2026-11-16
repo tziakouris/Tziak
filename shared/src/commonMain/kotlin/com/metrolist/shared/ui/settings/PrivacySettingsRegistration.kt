@@ -158,6 +158,17 @@ internal fun SettingsUiRegistryBuilder.registerPrivacySettings(host: SharedSetti
                     host.onSettingChanged(SettingsChangeEffect.LOGGING, it)
                 }
             }
+            if (host.platform == SettingsPlatform.ANDROID) {
+                switch(
+                    id = "keepDebugLog",
+                    title = stringResource(Res.string.keep_debug_log),
+                    description = stringResource(Res.string.keep_debug_log_desc),
+                    checked = settings.keepDebugLog,
+                ) {
+                    settings.keepDebugLog = it
+                    host.onSettingChanged(SettingsChangeEffect.LOGGING, it)
+                }
+            }
             host.privacyDiagnosticActions.forEach { item ->
                 action(item.id, item.title, item.description, enabled = item.enabled, onClick = item.onClick)
             }

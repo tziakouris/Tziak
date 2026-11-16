@@ -433,6 +433,7 @@ class Settings(
     var seekExtraSeconds by preference(false)
     var seekDurationSeconds by preference(SeekDurationSecondsKey, 10)
     var pauseOnMute by preference(PauseOnMuteKey, true)
+    var keepDebugLog by preference("keepDebugLog", false)
     var stopMusicOnTaskClear by preference(true)
     var githubNTransformEnabled by preference(GitHubNTransformEnabledKey, false)
     var githubNTransformConfigUrl by preference(
