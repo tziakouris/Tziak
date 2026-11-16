@@ -399,7 +399,7 @@ class Settings(
     val isAnimatedArtworkOrCanvasEnabled: Boolean
         get() = isCanvasEnabled || enableAnimatedCovers
 
-    var audioQuality by preference("AUTO")
+    var audioQuality by preference("HIGH")
     var audioNormalization by preference(false)
     var loudnessLevel by preference(LoudnessLevelKey, LoudnessLevel.BALANCED)
     var volume by preference(0.7f)
@@ -432,7 +432,7 @@ class Settings(
     var autoSkipNextOnError by preference(false)
     var seekExtraSeconds by preference(false)
     var seekDurationSeconds by preference(SeekDurationSecondsKey, 10)
-    var pauseOnMute by preference(PauseOnMuteKey, false)
+    var pauseOnMute by preference(PauseOnMuteKey, true)
     var stopMusicOnTaskClear by preference(true)
     var githubNTransformEnabled by preference(GitHubNTransformEnabledKey, false)
     var githubNTransformConfigUrl by preference(
@@ -545,11 +545,11 @@ class Settings(
     var speedDialArtworkRefreshTimes by blobPreference(SpeedDialArtworkRefreshTimesKey)
     var speedDialSurprisePinned by preference(SpeedDialSurprisePinnedKey, false)
 
-    var showLikedPlaylist by preference(true)
+    var showLikedPlaylist by preference(false)
     var showDownloadedPlaylist by preference(true)
-    var showTopPlaylist by preference(true)
-    var showUploadedPlaylist by preference(true)
-    var showCachedPlaylist by preference(true)
+    var showTopPlaylist by preference(false)
+    var showUploadedPlaylist by preference(false)
+    var showCachedPlaylist by preference(false)
 
     var songCacheEnabled by preference(false)
     var maxSongCacheSize by preference(1024)
