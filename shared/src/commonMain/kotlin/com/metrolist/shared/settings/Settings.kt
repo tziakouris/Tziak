@@ -336,14 +336,14 @@ class Settings(
 
     var miniplayerFocusMode by preference(false)
     var miniPlayerBackgroundStyle by preference("DEFAULT")
-    var playerThumbnailStyle by preference(PlayerThumbnailStyle.COMPACT)
+    var playerThumbnailStyle by preference(PlayerThumbnailStyle.FULLSCREEN)
     var castEnabled by preference(CastEnabledKey, true)
     var showPlayerCastButton by preference(ShowPlayerCastButtonKey, true)
     var showPlayerVideoButton by preference(ShowPlayerVideoButtonKey, true)
 
     val isPlayerCastButtonVisible: Boolean
         get() = castEnabled && showPlayerCastButton
-    var playerBackgroundStyle by preference(PlayerBackgroundStyle.SOLID)
+    var playerBackgroundStyle by preference(PlayerBackgroundStyle.ANIMATED_GRADIENT)
     var sliderStyle by preference(SliderStyle.DEFAULT)
     var sliderTrackThicknessDp by preference(SliderTrackThicknessDpKey, 5f)
     var playbackSpeed by preference(PlaybackSpeedKey, 1f)
@@ -375,10 +375,10 @@ class Settings(
     var audioBoostDb by preference(AudioBoostDbKey, 0f)
     var playerType by preference(PlayerType.MODERN)
     var miniPlayerType by preference(MiniPlayerType.EXPRESSIVE)
-    var useRoundedRectPlayButton by preference(false)
+    var useRoundedRectPlayButton by preference(true)
     var cropAlbumArt by preference(true)
     var swapPlayerControls by preference(false)
-    var immersivePlayer by preference(false)
+    var immersivePlayer by preference(true)
     var isExpanded by preference(false)
     var densityScaleFactor by preference(DensityScaleKey, 1f)
     var enableLandscapeScaling by preference(EnableLandscapeScalingKey, false)
@@ -389,7 +389,7 @@ class Settings(
     var floatingSearch by preference(false)
     var voiceSearchEnabled by preference(VoiceSearchEnabledKey, true)
 
-    var playerCanvasEnabled by preference(false)
+    var playerCanvasEnabled by preference(true)
 
     var hasCanvasToggle = false
 
@@ -460,8 +460,8 @@ class Settings(
     var lyricsProviderOrder by preference(LyricsProvider.userConfigurable.joinToString(",") { it.name })
     var lyricsEnabledProviders by preference("")
     var preferWordSyncedLyrics by preference(PreferWordSyncedLyricsKey, false)
-    var canvasContentOrder by preference(CanvasContentOrderKey, "YOUTUBE_MUSIC_VIDEO,SPOTIFY_CANVAS,APPLE_MUSIC")
-    var canvasEnabledSources by preference(CanvasEnabledSourcesKey, "")
+    var canvasContentOrder by preference(CanvasContentOrderKey, "APPLE_MUSIC,SPOTIFY_CANVAS,YOUTUBE_MUSIC_VIDEO")
+    var canvasEnabledSources by preference(CanvasEnabledSourcesKey, "APPLE_MUSIC,SPOTIFY_CANVAS,YOUTUBE_MUSIC_VIDEO")
     var lyricsShowTranslations by preference(false)
     var lyricsAiTranslationEnabled by preference(false)
     var lyricsAiProvider by preference("OpenRouter")
@@ -674,16 +674,16 @@ class Settings(
 
     var playbackClientHealthJson by blobPreference(PlaybackClientHealthJsonKey)
 
-    var enableAnimatedCovers by preference(false)
+    var enableAnimatedCovers by preference(true)
     var disableAnimatedArtworkOnMobileData by preference(DisableAnimatedArtworkOnMobileDataKey, false)
 
     fun isAnimatedArtworkAllowedOnNetwork(network: PlaybackNetworkState = PlaybackNetworkStateStore.current): Boolean =
         !disableAnimatedArtworkOnMobileData || !network.isCellular
 
-    var enableAppleMusicArtistImages by preference(AppleMusicArtistImagesKey, false)
+    var enableAppleMusicArtistImages by preference(AppleMusicArtistImagesKey, true)
     var enableAppleMusicArtistVideos by preference(AppleMusicArtistVideosKey, enableAppleMusicArtistImages)
-    var animatedCoverResolution by preference(AnimatedCoverResolutionKey, AnimatedCoverResolution.MEDIUM_720)
-    var appleMusicArtistVideoResolution by preference(AppleMusicArtistVideoResolutionKey, AnimatedCoverResolution.MEDIUM_720)
+    var animatedCoverResolution by preference(AnimatedCoverResolutionKey, AnimatedCoverResolution.ORIGINAL)
+    var appleMusicArtistVideoResolution by preference(AppleMusicArtistVideoResolutionKey, AnimatedCoverResolution.ORIGINAL)
     var animatedCoverCacheJson by preference(AnimatedCoverCacheJsonKey, "{}")
     var appleMusicArtistCacheJson by preference(AppleMusicArtistCacheJsonKey, "{}")
     var animatedArtworkCacheSize by preference(AnimatedArtworkCacheSizeKey, 2048)
@@ -763,7 +763,7 @@ class Settings(
         set(value) {
             storedLibraryGridColumns = value.coerceIn(LibraryGridColumnsRange)
         }
-    private var storedLibraryPinchColumns by preference(LibraryPinchColumnsKey, 0)
+    private var storedLibraryPinchColumns by preference(LibraryPinchColumnsKey, 2)
 
     var libraryPinchColumns: Int
         get() = storedLibraryPinchColumns.takeIf { it in LibraryGridColumnsRange } ?: 0

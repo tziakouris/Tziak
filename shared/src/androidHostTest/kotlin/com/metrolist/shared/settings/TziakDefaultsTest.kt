@@ -34,4 +34,16 @@ class TziakDefaultsTest {
 
     @Test
     fun updateCheckDefaultsToOn() = assertTrue(fresh.checkForUpdates)
+
+    @Test
+    fun playerLookDefaultsMatchTheChosenStyle() {
+        assertEquals(PlayerThumbnailStyle.FULLSCREEN, fresh.playerThumbnailStyle)
+        assertEquals(PlayerBackgroundStyle.ANIMATED_GRADIENT, fresh.playerBackgroundStyle)
+        assertTrue(fresh.immersivePlayer)
+        assertTrue(fresh.useRoundedRectPlayButton)
+        assertTrue(fresh.enableAnimatedCovers)
+        assertTrue(fresh.enableAppleMusicArtistImages)
+        assertEquals(AnimatedCoverResolution.ORIGINAL, fresh.animatedCoverResolution)
+        assertEquals(2, fresh.libraryPinchColumns)
+    }
 }
