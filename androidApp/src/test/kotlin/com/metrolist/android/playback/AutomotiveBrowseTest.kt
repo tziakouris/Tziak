@@ -176,6 +176,20 @@ class AutomotiveBrowseTest {
         }
 
     @Test
+    fun likedMusicAndEpisodesForLaterAreHiddenFromCarPlaylists() =
+        runBlocking {
+            val dao = database.dao()
+            dao.insert(PlaylistEntity("p-liked", "Liked Music", browseId = "LM"))
+            dao.insert(PlaylistEntity("p-eps", "Episodes for Later", browseId = "SE"))
+            dao.insert(PlaylistEntity("p-mine", "Madonna", browseId = "PLmine"))
+            val titles =
+                library()
+                    .children(AutomotiveMediaIds.PLAYLISTS, 0, 100)
+                    .map { it.mediaMetadata.title.toString() }
+            assertEquals(listOf("Madonna"), titles.filter { it in setOf("Liked Music", "Episodes for Later", "Madonna") })
+        }
+
+    @Test
     fun playlistsFolderAsksTheCarForBigGridCovers() {
         val extras = AutomotiveMediaLibrary(context, database, repository).rootChildren().single().mediaMetadata.extras
         assertEquals(

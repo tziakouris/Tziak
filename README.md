@@ -7,15 +7,15 @@ Tziak is an independent project. It is not affiliated with, or endorsed by, the 
 ## What is different from Metrolist
 
 **Android Auto**
-- The car shows a single Playlists screen, listed A–Z, with large artwork.
-- The music service keeps running when Android refuses a foreground start, so the screen does not go black and the play button keeps working.
+- The car shows a single Playlists screen, listed A–Z, with large artwork grid covers.
+- YouTube's own "Liked Music" and "Episodes for Later" lists are hidden from the car list (they stay in the phone app).
+- Starting the app from the car before the phone app has been opened works: the YouTube language and country are set at start-up.
 
 **App**
-- New defaults: High audio quality, Big grid size, auto playlists off (except Downloaded), pause when media is muted on.
-- A permanent Downloads entry in the Library, with a way to remove one song or all downloads.
+- Defaults: High audio quality, Big grid size, auto playlists off (except Downloaded), pause when media is muted on, and a full-screen player look (full-screen artwork, animated gradient background, animated covers).
 - A debug log you can switch on (Settings → Privacy → Keep debug log) and share. It is off by default.
-- The updater checks this project's releases and verifies a SHA-256 checksum. Metrolist's changelog screen is removed.
-- New name, package id and icon.
+- The updater checks this project's releases and verifies a SHA-256 checksum before installing.
+- New name and icon.
 
 ## Building
 

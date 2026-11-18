@@ -655,6 +655,8 @@ internal class AutomotiveMediaLibrary(
                         .dao()
                         .playlistsByNameAsc()
                         .first()
+                        // YouTube's own Liked Music and Episodes for Later lists are not wanted in the car.
+                        .filterNot { it.playlist.browseId in HIDDEN_CAR_PLAYLIST_BROWSE_IDS }
                         .map { playlist ->
                             folder(
                                 mediaId = automotiveStoredPlaylistMediaId(playlist.playlist),
@@ -1554,6 +1556,7 @@ internal class AutomotiveMediaLibrary(
 
     private companion object {
         const val SEARCH_LIMIT = 100
+        val HIDDEN_CAR_PLAYLIST_BROWSE_IDS = setOf("LM", "SE")
         const val MAX_CACHED_SEARCHES = 32
         const val SEARCH_CACHE_TTL_MS = 2 * 60 * 1000L
         const val MAX_REMOTE_PLAYLIST_PAGES = 100
