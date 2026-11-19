@@ -740,6 +740,7 @@ class ExoPlaybackPlayer(
                     isPlaying,
                     exo.currentPosition.coerceAtLeast(0L),
                 )
+                if (isPlaying) SongStartTimer.playing(currentResource?.videoId)
             }
 
             override fun onEvents(

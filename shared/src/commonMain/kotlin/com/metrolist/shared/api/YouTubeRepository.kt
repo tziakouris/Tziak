@@ -87,6 +87,7 @@ import com.metrolist.shared.model.toSongItem
 import com.metrolist.shared.playlist.LibraryDeletionTracker
 import com.metrolist.shared.playlist.PlaylistChanges
 import com.metrolist.shared.settings.BlockedContent
+import com.metrolist.shared.settings.Settings
 import com.metrolist.shared.state.SongLikeState
 import com.metrolist.shared.utils.Logger
 import com.metrolist.shared.viewmodels.LIBRARY_REFRESH_TTL_MILLIS
@@ -107,6 +108,9 @@ import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -938,7 +942,7 @@ class YouTubeRepository(
                 onPlaylistNotFound(playlistId)
                 throw PlaylistNotFoundException(playlistId)
             }
-            Logger.w(TAG, "Playlist browse failed browseId=$id type=${e::class.simpleName}")
+            Logger.w(TAG, "Playlist browse failed browseId=$id type=${e::class.simpleName}${(e as? InnerTubeHttpException)?.let { " HTTP ${it.status.value}" } ?: ""}")
             val sections =
                 databaseProvider()?.loadOfflinePlaylist(playlistId, offlineSongAvailabilityProvider()?.songIds())
                     ?: throw e
@@ -2437,8 +2441,41 @@ class YouTubeRepository(
         params: String? = null,
     ): RadioQueuePage {
         val page = parseRadioQueueResponse(nextResponse(videoId, playlistId, params))
-        return page.copy(songs = BlockedContent.filterSongs(page.songs))
+        val filtered = page.copy(songs = BlockedContent.filterSongs(page.songs))
+        if (Settings.shared.keepDebugLog && params == null) logRadioComparison(videoId, playlistId, page, filtered)
+        return filtered
     }
+
+    // Test aid for the debug log only: records what the song radio returned and, beside it, what the
+    // YouTube website style mix ("RD" + video id) returns for the same song. Does not change playback.
+    private fun logRadioComparison(
+        videoId: String,
+        playlistId: String,
+        raw: RadioQueuePage,
+        filtered: RadioQueuePage,
+    ) {
+        radioLogScope.launch {
+            runCatching {
+                fun describe(songs: List<SongItem>) = songs.take(15).joinToString(" | ") { song -> "${song.artists.joinToString { it.name }} - ${song.title}" }
+                val session = innerTube.sessionSnapshot()
+                YtLogger.d(
+                    TAG,
+                    "radio seed=$videoId list=$playlistId login=${session.useLoginForBrowse} returned=${raw.songs.size} " +
+                        "afterFilter=${filtered.songs.size} songs=${describe(filtered.songs)}",
+                )
+                val mix = parseRadioQueueResponse(nextResponse(videoId, "RD$videoId", null))
+                YtLogger.d(
+                    TAG,
+                    "radio alt seed=$videoId list=RD$videoId returned=${mix.songs.size} songs=${describe(mix.songs)}",
+                )
+            }.onFailure { error ->
+                if (error is CancellationException) throw error
+                YtLogger.d(TAG, "radio comparison failed type=${error::class.simpleName}")
+            }
+        }
+    }
+
+    private val radioLogScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     suspend fun continueRadioQueue(continuation: String): RadioQueuePage {
         val page = parseRadioQueueResponse(nextResponse(continuation = continuation))

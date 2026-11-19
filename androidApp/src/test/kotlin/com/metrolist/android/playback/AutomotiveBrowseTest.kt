@@ -8,6 +8,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.session.MediaConstants
 import androidx.room3.Room
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import coil3.ImageLoader
@@ -157,7 +158,53 @@ class AutomotiveBrowseTest {
         Settings.replaceSharedForTest(null)
     }
 
-    private fun library() = AutomotiveMediaLibrary(context, database, repository)
+    private fun library() = AutomotiveMediaLibrary(context, database, repository, rootPlaylistsOnly = false)
+
+    @Test
+    fun playlistsAreListedAToZIgnoringCase() =
+        runBlocking {
+            val dao = database.dao()
+            dao.insert(PlaylistEntity("p-zed", "zed"))
+            dao.insert(PlaylistEntity("p-abc", "abc"))
+            dao.insert(PlaylistEntity("p-bee", "Bee"))
+            val titles =
+                library()
+                    .children(AutomotiveMediaIds.PLAYLISTS, 0, 100)
+                    .map { it.mediaMetadata.title.toString() }
+                    .filter { it in setOf("zed", "abc", "Bee") }
+            assertEquals(listOf("abc", "Bee", "zed"), titles)
+        }
+
+    @Test
+    fun likedMusicAndEpisodesForLaterAreHiddenFromCarPlaylists() =
+        runBlocking {
+            val dao = database.dao()
+            dao.insert(PlaylistEntity("p-liked", "Liked Music", browseId = "LM"))
+            dao.insert(PlaylistEntity("p-eps", "Episodes for Later", browseId = "SE"))
+            dao.insert(PlaylistEntity("p-mine", "Madonna", browseId = "PLmine"))
+            val titles =
+                library()
+                    .children(AutomotiveMediaIds.PLAYLISTS, 0, 100)
+                    .map { it.mediaMetadata.title.toString() }
+            assertEquals(listOf("Madonna"), titles.filter { it in setOf("Liked Music", "Episodes for Later", "Madonna") })
+        }
+
+    @Test
+    fun playlistsFolderAsksTheCarForBigGridCovers() {
+        val extras = AutomotiveMediaLibrary(context, database, repository).rootChildren().single().mediaMetadata.extras
+        assertEquals(
+            MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM,
+            extras?.getInt(MediaConstants.EXTRAS_KEY_CONTENT_STYLE_BROWSABLE),
+        )
+    }
+
+    @Test
+    fun rootShowsOnlyThePlaylistsFolder() {
+        val library = AutomotiveMediaLibrary(context, database, repository)
+        assertEquals(listOf(AutomotiveMediaIds.PLAYLISTS), library.rootChildren(childLimit = Int.MAX_VALUE).map { it.mediaId })
+        assertEquals(listOf(AutomotiveMediaIds.PLAYLISTS), library.rootChildren().map { it.mediaId })
+        assertEquals(listOf(AutomotiveMediaIds.PLAYLISTS), library.rootChildren(browsableOnly = false).map { it.mediaId })
+    }
 
     @Test
     fun builtinFoldersPublishTheirCollectionArtwork() {

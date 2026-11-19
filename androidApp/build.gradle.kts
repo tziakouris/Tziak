@@ -193,6 +193,8 @@ java {
 
 val sentryAuthToken = providers.environmentVariable("SENTRY_AUTH_TOKEN").filter(String::isNotBlank)
 val appVersion = providers.gradleProperty("appVersion").get()
+// Test builds install beside the older Tziak; switch to "com.tziak.music" when the new build replaces it.
+val baseApplicationId = "com.tziak.music"
 val bundledLanguageTags =
     rootProject
         .file("shared/src/commonMain/composeResources")
@@ -252,10 +254,10 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.metrolist.music"
+        applicationId = baseApplicationId
         minSdk = 24
         targetSdk = 37
-        versionCode = 155
+        versionCode = 162
         versionName = appVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -294,7 +296,7 @@ android {
             isShrinkResources = true
             ndk.debugSymbolLevel = "FULL"
             optimization.keepRules { ignoreFrom("com.materialkolor:material-kolor-android:5.0.1") }
-            manifestPlaceholders["appLabel"] = "Metrolist"
+            manifestPlaceholders["appLabel"] = "Tziak"
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -317,7 +319,7 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
-            manifestPlaceholders["appLabel"] = "Metrolist KMP Debug"
+            manifestPlaceholders["appLabel"] = "Tziak Debug"
         }
     }
 

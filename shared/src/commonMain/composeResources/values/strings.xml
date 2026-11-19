@@ -8,7 +8,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Bottom navigation -->
     <!-- Translators: Label for app name in the multiple app screens. -->
-    <string name="app_name" translatable="false">Metrolist</string>
+    <string name="app_name" translatable="false">Tziak</string>
     <string name="account_menu_license" translatable="false">GPL-3.0 MetrolistGroup</string>
     <!-- Translators: Apple mobile platform name displayed in application information. -->
     <!-- Translators: Navigation label for home in the multiple app screens. -->
@@ -1238,6 +1238,11 @@
     <string name="privacy_settings_title">Privacy</string>
     <!-- Translators: Option or section label for diagnostics in the Privacy settings. -->
     <string name="privacy_diagnostics">Diagnostics</string>
+    <string name="keep_debug_log">Keep debug log</string>
+    <string name="keep_debug_log_desc">Off by default. Turn on to record a log you can share to diagnose problems. Turning it off deletes the log</string>
+    <string name="share_debug_log">Share debug log</string>
+    <string name="share_debug_log_desc">Send the recent app log to help diagnose problems</string>
+    <string name="no_debug_log">No log available. Turn on Keep debug log and try again later</string>
     <!-- Translators: Switch label for sending crash and performance reports to Sentry in the Privacy settings. -->
     <string name="sentry_reporting">Crash and performance reports</string>
     <!-- Translators: Supporting text beneath the crash and performance reports switch in the Privacy settings. -->

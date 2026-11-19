@@ -450,7 +450,8 @@ class MusicService :
                     streamRecoveryVideoId = null
                     streamRecoveryBudget = null
                 },
-                onVideoSelected = { song -> videoMode.selectVideoForQueue(song) },
+                // Tziak: video songs open as audio; video starts only from the player's video button.
+                onVideoSelected = { _ -> },
                 castState = { castManager.state.value },
             )
         transitions =
@@ -2713,8 +2714,12 @@ class MusicService :
     ): PlaybackFetchResult =
         withContext(Dispatchers.IO) {
             val connected = PlaybackNetworkStateStore.current.connected
+            SongStartTimer.begin(song)
             cachedAudioResource(wantVideo && connected) { audioCacheManager.getCachedPlaybackResource(song) }
-                ?.let { return@withContext PlaybackFetchResult(resource = it) }
+                ?.let {
+                    SongStartTimer.resolved(song.id, "cache")
+                    return@withContext PlaybackFetchResult(resource = it)
+                }
             if (!connected && !song.isLocal && !song.id.startsWith("local_")) return@withContext PlaybackFetchResult()
             val hints = song.toAndroidContentHints(wantVideo = wantVideo)
             Timber.tag(MUSIC_VIDEO_TAG).d(
@@ -2750,6 +2755,7 @@ class MusicService :
                     resource.videoHeight,
                     resource.availableVideoHeights,
                 )
+                SongStartTimer.resolved(song.id, "network")
                 PlaybackFetchResult(resource = resource)
             } catch (e: CancellationException) {
                 Timber.tag(MUSIC_VIDEO_TAG).d("resource resolve cancelled videoId=%s wantVideo=%s", song.id, wantVideo)

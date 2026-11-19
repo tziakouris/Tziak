@@ -8,33 +8,61 @@ import org.junit.Test
 
 class AppUpdateManagerTest {
     @Test
-    fun apkSelectionPicksTheUniversalApk() {
-        assertEquals("Metrolist.apk", releaseWithAssets("Metrolist.apk", "metrolist-android-14.0.0-arm64-v8a.apk").apk?.name)
+    fun apkSelectionPicksTheTziakApkByReleaseName() {
         assertEquals(
-            "Metrolist.apk",
-            releaseWithAssets("Metrolist-izzy.apk", "Metrolist-with-Google-Cast.apk", "Metrolist.apk").apk?.name,
+            "Tziak-Next-14.0.0-tziak.1.apk",
+            tziakRelease("v14.0.0-tziak.1", "Tziak-Next-14.0.0-tziak.1.apk", "notes.txt").apk?.name,
         )
-        assertEquals("metrolist-android-14.0.0.apk", releaseWithAssets("metrolist-android-14.0.0.apk").apk?.name)
-        assertEquals("metrolist-android-14.0.0-universal.apk", releaseWithAssets("metrolist-android-14.0.0-universal.apk").apk?.name)
+        assertEquals("Tziak-14.0.0-tziak.2.apk", tziakRelease("v14.0.0-tziak.2", "Tziak-14.0.0-tziak.2.apk").apk?.name)
+        assertEquals("Tziak.apk", tziakRelease("v14.0.0-tziak.3", "Tziak.apk").apk?.name)
     }
 
     @Test
-    fun apkSelectionRejectsAbiSpecificIncompleteAndAmbiguousAssets() {
-        assertNull(releaseWithAssets("metrolist-android-14.0.0-arm64-v8a.apk").apk)
-        assertNull(releaseWithAssets("metrolist-android-14.0.0-debug.apk").apk)
-        assertNull(releaseWithAssets("metrolist-android-13.0.0.apk").apk)
-        assertNull(releaseWithAssets("unknown.apk").apk)
-        val incomplete = releaseWithAssets("Metrolist.apk")
+    fun releaseWithoutAnApkOffersNothingToInstall() {
+        assertNull(tziakRelease("v14.0.0-tziak.2", "notes.txt").apk)
+        assertNull(tziakRelease("v14.0.0-tziak.2", "Tziak-14.0.0-tziak.1.apk").apk)
+        assertNull(tziakRelease("v14.0.0-tziak.2", "Tziak-14.0.0-tziak.2-debug.apk").apk)
+        assertNull(tziakRelease("v14.0.0-tziak.2", "unknown.apk").apk)
+        val incomplete = tziakRelease("v14.0.0-tziak.2", "Tziak-14.0.0-tziak.2.apk")
         assertNull(incomplete.copy(assets = incomplete.assets.map { it.copy(state = "new") }).apk)
-        assertNull(releaseWithAssets("Metrolist.apk", "METROLIST.APK").apk)
     }
 
-    private fun releaseWithAssets(vararg names: String) =
-        GitHubRelease(
-            tagName = "v14.0.0",
-            htmlUrl = "https://github.com/MetrolistGroup/Metrolist/releases/tag/v14.0.0",
-            assets = names.map { GitHubReleaseAsset(it, "uploaded", 100, downloadUrl = "https://example.com/$it") },
-        )
+    @Test
+    fun onlyReleasesWithAnInstallableApkAreOffered() {
+        val noApk = tziakRelease("v14.0.0-tziak.3", "notes.txt")
+        val installable = tziakRelease("v14.0.0-tziak.2", "Tziak-14.0.0-tziak.2.apk")
+        val current = tziakRelease("v14.0.0-tziak.1", "Tziak-14.0.0-tziak.1.apk")
+        assertEquals(installable, AppUpdateManager.newestInstallableUpdate(listOf(noApk, installable, current), "14.0.0-tziak.1"))
+        assertNull(AppUpdateManager.newestInstallableUpdate(listOf(noApk, current), "14.0.0-tziak.1"))
+        assertNull(AppUpdateManager.newestInstallableUpdate(listOf(installable), "14.0.0-tziak.2"))
+    }
+
+    @Test
+    fun tziakVersionsCompareNumerically() {
+        assertTrue(AppUpdateManager.compareVersions("14.0.0-tziak.2", "14.0.0-tziak.1") > 0)
+        assertTrue(AppUpdateManager.compareVersions("14.0.0-tziak.10", "14.0.0-tziak.9") > 0)
+        assertTrue(AppUpdateManager.compareVersions("14.0.1-tziak.1", "14.0.0-tziak.9") > 0)
+        assertEquals(0, AppUpdateManager.compareVersions("14.0.0-tziak.1", "14.0.0-tziak.1"))
+        assertEquals(0, AppUpdateManager.compareVersions("garbage", "14.0.0-tziak.1"))
+    }
+
+    @Test
+    fun updatesComeFromTheTziakRepoOnly() {
+        assertEquals("https://api.github.com/repos/tziakouris/Tziak/releases?per_page=50", AppUpdateManager.RELEASES_URL)
+        assertTrue(AppUpdateManager.isTrustedDownloadUrl("https://github.com/tziakouris/Tziak/releases/download/v14.0.0-tziak.2/Tziak.apk"))
+        assertFalse(AppUpdateManager.isTrustedDownloadUrl("https://evil.example.com/Tziak.apk"))
+        assertFalse(AppUpdateManager.isTrustedDownloadUrl("http://github.com/tziakouris/Tziak/releases/download/v1/Tziak.apk"))
+        assertFalse(AppUpdateManager.isTrustedDownloadUrl("https://github.com/MetrolistGroup/Metrolist/releases/download/v14.0.0/Metrolist.apk"))
+    }
+
+    private fun tziakRelease(
+        tag: String,
+        vararg names: String,
+    ) = GitHubRelease(
+        tagName = tag,
+        htmlUrl = "https://github.com/tziakouris/Tziak/releases/tag/$tag",
+        assets = names.map { GitHubReleaseAsset(it, "uploaded", 100, downloadUrl = "https://example.com/$it") },
+    )
 
     @Test
     fun apkSignerMustMatchCurrentSignerOrProveForwardRotation() {

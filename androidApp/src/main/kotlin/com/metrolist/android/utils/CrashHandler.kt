@@ -10,6 +10,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Process
 import com.metrolist.android.BuildConfig
+import com.metrolist.android.logging.DebugLog
 import com.metrolist.android.ui.screens.CrashActivity
 import com.metrolist.shared.crash.CrashReport
 import com.metrolist.shared.crash.FatalCrashHandler
@@ -59,6 +60,7 @@ object CrashHandler {
         val fallback = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler(
             FatalCrashHandler(fallback) { thread, throwable ->
+                DebugLog.flush()
                 launch(context, record(context, throwable, thread))
                 Thread({ runCatching { Settings.shared.flush() } }, "CrashSettingsFlush").apply {
                     isDaemon = true

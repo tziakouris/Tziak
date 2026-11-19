@@ -317,6 +317,8 @@ internal class AutomotiveMediaLibrary(
     private val isNetworkConnected: () -> Boolean = { PlaybackNetworkStateStore.current.connected },
     private val nowMs: () -> Long = System::currentTimeMillis,
     private val refreshLikes: suspend () -> Boolean = { SongLikeState.refreshLikesFromRemote(force = false) },
+    // Tziak: the car's top level is a single Playlists folder. Other folders stay reachable by id for tests and deep links.
+    private val rootPlaylistsOnly: Boolean = true,
 ) {
     private data class RemotePlaylistState(
         val identity: List<String>,
@@ -497,6 +499,17 @@ internal class AutomotiveMediaLibrary(
     }
 
     private fun allRootChildren(browsableOnly: Boolean): List<MediaItem> {
+        if (rootPlaylistsOnly) {
+            return listOf(
+                folder(
+                    AutomotiveMediaIds.PLAYLISTS,
+                    context.getString(R.string.playlists),
+                    MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS,
+                    // The playlists inside are browsable; ask the car for big cover tiles instead of a list.
+                    childBrowsableStyle = MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM,
+                ),
+            )
+        }
         val pins = Settings.shared.getAutomotivePinnedPlaylists()
         val pinnedItems =
             if (pins.isEmpty()) {
@@ -642,6 +655,8 @@ internal class AutomotiveMediaLibrary(
                         .dao()
                         .playlistsByNameAsc()
                         .first()
+                        // YouTube's own Liked Music and Episodes for Later lists are not wanted in the car.
+                        .filterNot { it.playlist.browseId in HIDDEN_CAR_PLAYLIST_BROWSE_IDS }
                         .map { playlist ->
                             folder(
                                 mediaId = automotiveStoredPlaylistMediaId(playlist.playlist),
@@ -1548,6 +1563,7 @@ internal class AutomotiveMediaLibrary(
 
     private companion object {
         const val SEARCH_LIMIT = 100
+        val HIDDEN_CAR_PLAYLIST_BROWSE_IDS = setOf("LM", "SE")
         const val MAX_CACHED_SEARCHES = 32
         const val SEARCH_CACHE_TTL_MS = 2 * 60 * 1000L
         const val MAX_REMOTE_PLAYLIST_PAGES = 100

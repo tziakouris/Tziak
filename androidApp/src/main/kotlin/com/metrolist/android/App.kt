@@ -59,8 +59,10 @@ import com.metrolist.shared.discord.observeDiscordInitialization
 import com.metrolist.shared.equalizer.EqualizerProfiles
 import com.metrolist.shared.listentogether.network.isAllowedListenTogetherServerUrl
 import com.metrolist.shared.settings.BlockedContent
+import com.metrolist.android.logging.DebugLog
 import com.metrolist.shared.settings.Settings
 import com.metrolist.shared.state.GlobalYouTube
+import com.metrolist.shared.state.applyContentRegion
 import com.metrolist.shared.state.SongLikeState
 import com.metrolist.shared.state.SongMetadataState
 import com.metrolist.shared.state.coreModule
@@ -188,6 +190,13 @@ class App :
                             Snapshot.withMutableSnapshot { SongLikeState.initialize() }
                             AuthManager().restorePersistedSession()
                         }
+                        // Android Auto can start the service without any UI. Without this the YouTube
+                        // client has no hl/gl and every request fails with HTTP 400.
+                        GlobalYouTube.applyContentRegion(
+                            contentCountry = Settings.shared.contentCountry,
+                            contentLanguage = Settings.shared.contentLanguage,
+                            systemLocale = AppLocale.systemLocale(this@App),
+                        )
                         if (onboardingManager.isComplete) startDatabaseDependentServices()
                     },
                 )
@@ -241,6 +250,7 @@ class App :
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
+        DebugLog.install(this, Settings.shared.keepDebugLog)
 
         val koinStart = SystemClock.elapsedRealtime()
         startKoin {
