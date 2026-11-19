@@ -49,4 +49,7 @@ class TziakDefaultsTest {
 
     @Test
     fun musicVideoButtonIsAvailable() = assertTrue(fresh.musicVideoPlaybackEnabled)
+
+    @Test
+    fun youtubeCanvasQualityIsAuto() = assertEquals(MusicVideoQuality.AUTO, fresh.youtubeCanvasQuality)
 }
